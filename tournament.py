@@ -70,7 +70,7 @@ def playerStandings():
     cursor.close()
     return standings
 
-def reportMatch(winner, loser):
+def reportMatch(winner, loser, draw = False):
     """Records the outcome of a single match between two players.
 
     Args:
@@ -80,6 +80,11 @@ def reportMatch(winner, loser):
     conn = connect()
     cursor = conn.cursor()
     cursor.execute("insert into matches(winner, loser) values(%d, %d)" % (winner,loser))
+    conn.commit()
+    cursor.execute("select max(id) from matches")
+    match_id = cursor.fetchone()[0]
+    cursor.execute("insert into match_players (player_id, match_id) values (%d,%d)" % (winner,match_id))
+    cursor.execute("insert into match_players (player_id, match_id) values (%d,%d)" % (loser,match_id))
     conn.commit()
     conn.close()
 
@@ -105,19 +110,30 @@ def swissPairings():
         order = get_random_pairs(0, total_players - 1)
     else:
         order = [i for i in range(total_players)]
+        matches = get_matches()
+        i = 0
+        matches = get_sorted_matches(matches)
+
+        for i in range(0,total_players - 1,2):
+            pair = (standings[i][0],standings[i+1][0])
+            if sorted(pair) in matches:
+                temp = order[i+1]
+                order[i+1] = order[i+2]
+                order[i+2] = temp
     game_pairs = get_game_pairs(order, total_players, standings)
-    # storePlayerPairings(game_pairs)
     return game_pairs
 
-# def storePlayerPairings(pairing):
-#     conn = connect()
-#     cursor = conn.cursor()
-#     for p in pairing:
-#         player_id1 = p[0]
-#         player_id2 = p[2]
-#         cursor.execute("insert into matches (player_one, player_two) values(%d,%d)" % (player_id1, player_id2))
-#         conn.commit()
-#     conn.close()
+def get_sorted_matches(matches):
+    sorted_matches = []
+    for match in matches:
+        sorted_matches.append(sorted(match))
+    return sorted_matches
+
+def get_matches():
+    conn = connect()
+    c = conn.cursor()
+    c.execute("select winner, loser from matches")
+    return c.fetchall()
 
 def get_game_pairs(order, total_pairings, standings):
     game_pairs = [(standings[i][0], standings[i][1]) for i in order]
