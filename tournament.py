@@ -70,7 +70,7 @@ def playerStandings():
     cursor.close()
     return standings
 
-def reportMatch(winner, loser, draw = False):
+def reportMatch(match_id, winner, loser, draw = False):
     """Records the outcome of a single match between two players.
 
     Args:
@@ -79,14 +79,45 @@ def reportMatch(winner, loser, draw = False):
     """
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("insert into matches(winner, loser) values(%d, %d)" % (winner,loser))
+    cursor.execute("insert into match_results(match_id, winner, loser, draw) \
+                        values(%d, %d, %d, %s)" % (match_id, winner, loser, draw))
+
+    if draw == True:
+        winner_points = 1
+        loser_points = 1
+    else:
+        winner_points = 3
+        loser_points = 0
+
+    cursor.execute("insert into player_match_points (match_id, player_id, points) \
+                        values (%d,%d,%d)" % (match_id, winner, winner_points))
+    cursor.execute("insert into player_match_points (match_id, player_id, points) \
+                        values (%d,%d,%d)" % (match_id, loser, loser_points))
+    conn.commit()
+    conn.close()
+
+def player_with_no_bye():
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("select players.id from players, player_byes where player_byes.player_id <> players.id;")
+    player = cursor.fetchone()[0]
+    conn.close()
+    return player
+
+def report_bye(player_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("insert into matches (player_one) values(%d)" % player_id)
     conn.commit()
     cursor.execute("select max(id) from matches")
     match_id = cursor.fetchone()[0]
-    cursor.execute("insert into match_players (player_id, match_id) values (%d,%d)" % (winner,match_id))
-    cursor.execute("insert into match_players (player_id, match_id) values (%d,%d)" % (loser,match_id))
+    points = 3
+    bye = 1
+    cursor.execute("insert into player_match_points (match_id, player_id, points) \
+                        values(%d, %d, %d)" % (match_id, player_id, points))
+    cursor.execute("insert into player_byes (player_id, bye) \
+                        values(%d, %d)" % (player_id, bye))
     conn.commit()
-    conn.close()
 
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
@@ -108,6 +139,10 @@ def swissPairings():
     game_pairs = []
     if standings[0][3] == 0:
         order = get_random_pairs(0, total_players - 1)
+        # check if even numbers of players are there
+        if not total_players % 2 == 0:
+            report_bye(standings[order[-1]][0])
+            del order[-1]
     else:
         order = [i for i in range(total_players)]
         matches = get_matches()
@@ -120,8 +155,24 @@ def swissPairings():
                 temp = order[i+1]
                 order[i+1] = order[i+2]
                 order[i+2] = temp
-    game_pairs = get_game_pairs(order, total_players, standings)
+        if not total_players % 2 == 0:
+            player = player_with_no_bye()
+            for i in range(total_players-1,0,-1):
+                if player == standings[i][0]:
+                    report_bye(player)
+                    del order[i]
+                    break
+    game_pairs = get_game_pairs(order, standings)
+    create_matches(game_pairs)
     return game_pairs
+
+def create_matches(game_pairs):
+    conn = connect()
+    cursor = conn.cursor()
+    for pair in game_pairs:
+        cursor.execute("insert into matches (player_one, player_two) values(%d,%d)" % (pair[0],pair[2]))
+        conn.commit()
+    conn.close()
 
 def get_sorted_matches(matches):
     sorted_matches = []
@@ -132,12 +183,12 @@ def get_sorted_matches(matches):
 def get_matches():
     conn = connect()
     c = conn.cursor()
-    c.execute("select winner, loser from matches")
+    c.execute("select * from matches")
     return c.fetchall()
 
-def get_game_pairs(order, total_pairings, standings):
+def get_game_pairs(order, standings):
     game_pairs = [(standings[i][0], standings[i][1]) for i in order]
-    return [game_pairs[i] + game_pairs[i+1] for i in range(0, total_pairings, 2)]
+    return [game_pairs[i] + game_pairs[i+1] for i in range(0, len(order), 2)]
 
 def get_random_pairs(low,high,rand_order=[]):
     while len(rand_order) <= high:
