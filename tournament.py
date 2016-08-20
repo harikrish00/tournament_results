@@ -11,21 +11,14 @@ def connect():
     """Connect to the PostgreSQL database.  Returns a database connection."""
     return psycopg2.connect("dbname=tournament")
 
-def deleteMatches():
-    """Remove all the match records from the database."""
+def deleteTable(table_name):
+    """Remove all the records from the given table."""
     conn = connect()
     cursor = conn.cursor()
-    cursor.execute("delete from matches");
+    query = "delete from " + table_name
+    cursor.execute(query);
     conn.commit()
     cursor.close()
-
-def deletePlayers():
-    """Remove all the player records from the database."""
-    conn = connect()
-    cursor = conn.cursor()
-    cursor.execute('delete from players;')
-    conn.commit()
-    conn.close()
 
 def countPlayers():
     """Returns the number of players currently registered."""
