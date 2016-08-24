@@ -59,9 +59,9 @@ def testStandingsBeforeMatches():
                          "they have played any matches.")
     elif len(standings) > 2:
         raise ValueError("Only registered players should appear in standings.")
-    if len(standings[0]) != 5:
-        raise ValueError("Each playerStandings row should have five columns.")
-    [(id1, name1, wins1, matches1, points1), (id2, name2, wins2, matches2, points2)] = standings
+    if len(standings[0]) != 6:
+        raise ValueError("Each playerStandings row should have six columns.")
+    [(id1, name1, wins1, matches1, points1, omw1), (id2, name2, wins2, matches2, points2, omw2)] = standings
     if matches1 != 0 or matches2 != 0 or wins1 != 0 or wins2 != 0 or points1 != 0 or points2 != 0:
         raise ValueError(
             "Newly registered players should have no matches, wins or points.")
@@ -89,7 +89,7 @@ def testReportMatches():
     reportMatch(match1, id1, id2)
     reportMatch(match2, id3, id4)
     standings = playerStandings()
-    for (i, n, w, m, p) in standings:
+    for (i, n, w, m, p, o) in standings:
         if m != 1:
             raise ValueError("Each player should have one match recorded.")
         if i in (id1, id3) and w != 1:
@@ -101,7 +101,7 @@ def testReportMatches():
     standings = playerStandings()
     if len(standings) != 4:
         raise ValueError("Match deletion should not change number of players in standings.")
-    for (i, n, w, m, p) in standings:
+    for (i, n, w, m, p, o) in standings:
         if m != 0:
             raise ValueError("After deleting matches, players should have zero matches recorded.")
         if w != 0:
