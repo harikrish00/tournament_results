@@ -38,6 +38,14 @@ def countPlayers(t_id):
     conn.close()
     return count
 
+def player_with_byes(t_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("select * from player_byes where t_id=%d" % t_id)
+    player_byes = cursor.fetchall()
+    conn.close()
+    return player_byes
+
 def registerPlayer(t_id, name):
     """Adds a player to the tournament database.
 
@@ -139,11 +147,11 @@ def swissPairings(t_id):
     standings = playerStandings(t_id)
     total_players = len(standings)
     game_pairs = []
-    if standings[0][3] == 0:
+    if standings[0][4] == 0:
         order = get_random_pairs(0, total_players - 1)
         # check if even numbers of players are there
         if not total_players % 2 == 0:
-            report_bye(t_id, standings[order[-1]][0])
+            report_bye(t_id, standings[order[-1]][1])
             del order[-1]
     else:
         order = [i for i in range(total_players)]
@@ -152,7 +160,7 @@ def swissPairings(t_id):
         matches = get_sorted_matches(matches)
 
         for i in range(0,total_players - 1,2):
-            pair = (standings[i][0],standings[i+1][0])
+            pair = (standings[i][1],standings[i+1][1])
             if sorted(pair) in matches:
                 temp = order[i+1]
                 order[i+1] = order[i+2]
@@ -160,7 +168,7 @@ def swissPairings(t_id):
         if not total_players % 2 == 0:
             player = player_with_no_bye(t_id)
             for i in range(total_players-1,0,-1):
-                if player == standings[i][0]:
+                if player == standings[i][1]:
                     report_bye(t_id, player)
                     del order[i]
                     break
@@ -189,7 +197,7 @@ def get_matches(t_id):
     return c.fetchall()
 
 def get_game_pairs(order, standings):
-    game_pairs = [(standings[i][0], standings[i][1]) for i in order]
+    game_pairs = [(standings[i][1], standings[i][2]) for i in order]
     return [game_pairs[i] + game_pairs[i+1] for i in range(0, len(order), 2)]
 
 def get_random_pairs(low,high,rand_order=[]):
