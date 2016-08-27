@@ -17,7 +17,7 @@ def create_tournament(name=''):
     cursor.execute("insert into tournaments (name) values (%s) returning id", (name,))
     t_id = cursor.fetchone()[0]
     conn.commit()
-    cursor.close()
+    conn.close()
     return t_id
 
 def deleteTable(table_name):
@@ -27,7 +27,7 @@ def deleteTable(table_name):
     query = "delete from " + table_name
     cursor.execute(query);
     conn.commit()
-    cursor.close()
+    conn.close()
 
 def countPlayers(t_id):
     """Returns the number of players currently registered."""
@@ -74,10 +74,11 @@ def playerStandings(t_id):
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-    cursor = connect().cursor()
+    conn = connect()
+    cursor = conn.cursor()
     cursor.execute("select * from standings where t_id=%d" % t_id)
     standings = cursor.fetchall()
-    cursor.close()
+    conn.close()
     return standings
 
 def reportMatch(t_id, match_id, winner, loser, draw = False):
@@ -128,6 +129,7 @@ def report_bye(t_id, player_id):
     cursor.execute("insert into player_byes (t_id, player_id, bye) \
                         values(%d, %d, %d)" % (t_id, player_id, bye))
     conn.commit()
+    conn.close()
 
 def swissPairings(t_id):
     """Returns a list of pairs of players for the next round of a match.
@@ -148,7 +150,7 @@ def swissPairings(t_id):
     total_players = len(standings)
     game_pairs = []
     if standings[0][4] == 0:
-        order = get_random_pairs(0, total_players - 1)
+        order = get_random_pairs(0, total_players)
         # check if even numbers of players are there
         if not total_players % 2 == 0:
             report_bye(t_id, standings[order[-1]][1])
@@ -194,17 +196,20 @@ def get_matches(t_id):
     conn = connect()
     c = conn.cursor()
     c.execute("select * from matches where t_id=%d" % t_id)
-    return c.fetchall()
+    matches = c.fetchall()
+    conn.close()
+    return matches
 
 def get_game_pairs(order, standings):
     game_pairs = [(standings[i][1], standings[i][2]) for i in order]
     return [game_pairs[i] + game_pairs[i+1] for i in range(0, len(order), 2)]
 
-def get_random_pairs(low,high,rand_order=[]):
-    while len(rand_order) <= high:
-        randNum = random.randint(low,high)
-        if not randNum in rand_order:
-            rand_order.append(randNum)
-        else:
-            get_random_pairs(low,high,rand_order)
-    return rand_order
+def get_random_pairs(low,high):
+    return random.sample(xrange(high),high)
+    # while len(rand_order) <= high:
+    #     randNum = random.randint(low,high)
+    #     if not randNum in rand_order:
+    #         rand_order.append(randNum)
+    #     else:
+    #         get_random_pairs(low,high,rand_order)
+    # return rand_order

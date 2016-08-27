@@ -13,7 +13,6 @@ def test_rematch_is_prevented():
     """
     Test for rematch between player is prevented
     """
-
     t_id = create_tournament('test')
     registerPlayer(t_id, 'Cheryl Shakin')
     registerPlayer(t_id, 'Tena Stone')
@@ -58,6 +57,18 @@ def test_assign_bye_for_odd_number_of_players():
                 raise ValueError(
                     "A bye should be counted as free win and 3 points should be assigned to the user, total points %d" % item[5])
     print "3. A bye is counted as free win and player is assigned 3 points"
+
+def test_support_for_match_draw():
+    t_id = create_tournament('test')
+    registerPlayer(t_id, 'Cheryl Shakin')
+    registerPlayer(t_id, 'Tena Stone')
+    registerPlayer(t_id, 'Norma Chapa')
+    registerPlayer(t_id, 'Theresa Fisher')
+    swissPairings(t_id)
+    matches = get_matches(t_id)
+    for match in matches:
+        reportMatch(match[3],match[0],match[1],match[2],draw=True)
+    
 
 
 
