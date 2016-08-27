@@ -66,13 +66,42 @@ def test_support_for_match_draw():
     registerPlayer(t_id, 'Theresa Fisher')
     swissPairings(t_id)
     matches = get_matches(t_id)
-    for match in matches:
-        reportMatch(match[3],match[0],match[1],match[2],draw=True)
-    
+    match = matches[0]
+    reportMatch(match[3],match[0],match[1],match[2],draw=True)
+    points = player_match_points(match[3],match[0])
+    if len(points) == 2 and points[0][4] == 1 and points[1][4] == 1:
+        print "4. Support for match draw is implemented, each player is given 1 points"
+    else:
+        raise ValueError(
+            "Support for match draw should be supported, and each player should be given 1 points each, but the points for player 1 is %d and player 2 is %d" % (points[0][4],points[1][4]))
 
+def test_more_than_one_tournament_is_supported():
+    tid1 = create_tournament("tournament1")
+    tid2 = create_tournament("tournament2")
+    t1_players = ['Alison George','Michelle G']
+    t2_players = ['Hillary C','Bill Mayer']
+    for p in t1_players:
+        registerPlayer(tid1,p)
+    for p in t2_players:
+        registerPlayer(tid2,p)
+
+    for player in playerStandings(tid1):
+        if not player[2] in t1_players:
+            raise ValueError(
+                "Registered players are not found in the tournament")
+            player_foudn = False
+
+    for player in playerStandings(tid2):
+        if not player[2] in t2_players:
+            raise ValueError(
+                "Registered players are not found in the tournament")
+            player_foudn = False
+    print "5. Supports more than one tournament, and players registering for particular tournament belongs to the same tournament"
 
 
 if __name__ == '__main__':
     test_rematch_is_prevented()
     test_assign_bye_for_odd_number_of_players()
+    test_support_for_match_draw()
+    test_more_than_one_tournament_is_supported()
     print "Success!  All tests pass!"

@@ -61,6 +61,15 @@ def registerPlayer(t_id, name):
     conn.commit()
     conn.close()
 
+
+def player_match_points(t_id, match_id):
+    conn = connect()
+    cursor = conn.cursor()
+    cursor.execute("select * from player_match_points where t_id=%d and match_id=%d" % (t_id, match_id))
+    points = cursor.fetchall()
+    conn.close()
+    return points
+
 def playerStandings(t_id):
     """Returns a list of the players and their win records, sorted by wins.
 
