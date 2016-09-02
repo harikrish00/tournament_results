@@ -12,6 +12,7 @@ def connect():
     return psycopg2.connect("dbname=tournament")
 
 def create_tournament(name=''):
+    """Create a new tournament for conducting mathces"""
     conn = connect()
     cursor = conn.cursor()
     cursor.execute("insert into tournaments (name) values (%s) returning id", (name,))
@@ -39,6 +40,7 @@ def countPlayers(t_id):
     return count
 
 def player_with_byes(t_id):
+    """Returns all the players who have recieved bye"""
     conn = connect()
     cursor = conn.cursor()
     cursor.execute("select * from player_byes where t_id=%d" % t_id)
@@ -53,6 +55,7 @@ def registerPlayer(t_id, name):
     should be handled by your SQL database schema, not in your Python code.)
 
     Args:
+      t_id: tournament id where the player is registering to
       name: the player's full name (need not be unique).
     """
     conn = connect()
@@ -63,6 +66,16 @@ def registerPlayer(t_id, name):
 
 
 def player_match_points(t_id, match_id):
+    """Returns players points for a particular match
+
+    Player is assigned points for each match played based on the outcome of the match.
+    Those points are recorded in this database, and this function fetches the points
+    for particular match given
+
+    Args:
+      t_id: tournament id where player belongs to
+      match_id: id of the match
+    """
     conn = connect()
     cursor = conn.cursor()
     cursor.execute("select * from player_match_points where t_id=%d and match_id=%d" % (t_id, match_id))
@@ -140,7 +153,7 @@ def report_bye(t_id, player_id):
     conn.commit()
     conn.close()
 
-def swissPairings(t_id):
+def swiss_pairings(t_id):
     """Returns a list of pairs of players for the next round of a match.
 
     Assuming that there are an even number of players registered, each player
@@ -158,12 +171,17 @@ def swissPairings(t_id):
     standings = playerStandings(t_id)
     total_players = len(standings)
     game_pairs = []
+    #standings are always ordered by wins descending, and if the first player
+    #in the standings has 0 matches then its the first round
     if standings[0][4] == 0:
+        #for the first round generate game pairs randomly
         order = get_random_pairs(0, total_players)
         # check if even numbers of players are there
         if not total_players % 2 == 0:
+            #in case of even numbers of players report bye for one player
             report_bye(t_id, standings[order[-1]][1])
             del order[-1]
+    #other than the initial round, generate the game pair based on standings
     else:
         order = [i for i in range(total_players)]
         matches = get_matches(t_id)
@@ -188,6 +206,7 @@ def swissPairings(t_id):
     return game_pairs
 
 def create_matches(t_id, game_pairs):
+    """Create the matches after a swiss pairing is generated"""
     conn = connect()
     cursor = conn.cursor()
     for pair in game_pairs:
@@ -196,12 +215,14 @@ def create_matches(t_id, game_pairs):
     conn.close()
 
 def get_sorted_matches(matches):
+    """Sort the matches in ascending order for comparison"""
     sorted_matches = []
     for match in matches:
         sorted_matches.append(sorted(match))
     return sorted_matches
 
 def get_matches(t_id):
+    """Returns all the matches scheduled to be played"""
     conn = connect()
     c = conn.cursor()
     c.execute("select * from matches where t_id=%d" % t_id)
@@ -210,15 +231,10 @@ def get_matches(t_id):
     return matches
 
 def get_game_pairs(order, standings):
+    """Generate game pairs based on the standings for subsequent matches"""
     game_pairs = [(standings[i][1], standings[i][2]) for i in order]
     return [game_pairs[i] + game_pairs[i+1] for i in range(0, len(order), 2)]
 
 def get_random_pairs(low,high):
+    """Genereate a radom order for initial pairings"""
     return random.sample(xrange(high),high)
-    # while len(rand_order) <= high:
-    #     randNum = random.randint(low,high)
-    #     if not randNum in rand_order:
-    #         rand_order.append(randNum)
-    #     else:
-    #         get_random_pairs(low,high,rand_order)
-    # return rand_order

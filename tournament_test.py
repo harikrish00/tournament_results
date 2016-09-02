@@ -81,7 +81,7 @@ def testReportMatches():
     registerPlayer("Boots O'Neal")
     registerPlayer("Cathy Burton")
     registerPlayer("Diane Grant")
-    swissPairings()
+    swiss_pairings()
     matches = get_matches()
 
     [match1,id1,id2] = [matches[0][0], matches[0][1], matches[0][2]]
@@ -122,7 +122,7 @@ def testPairings():
     registerPlayer("Rainbow Dash")
     registerPlayer("Princess Celestia")
     registerPlayer("Princess Luna")
-    pairings = swissPairings()
+    pairings = swiss_pairings()
     matches = get_matches()
     [match1,id1,id2] = [matches[0][0], matches[0][1], matches[0][2]]
     [match2,id3,id4] = [matches[1][0], matches[1][1],matches[1][2]]
@@ -136,7 +136,7 @@ def testPairings():
     reportMatch(match2, id3, id4)
     reportMatch(match3, id5, id6)
     reportMatch(match4, id7, id8)
-    pairings = swissPairings()
+    pairings = swiss_pairings()
     if len(pairings) != 4:
         raise ValueError(
             "For eight players, swissPairings should return 4 pairs. Got {pairs}".format(pairs=len(pairings)))
